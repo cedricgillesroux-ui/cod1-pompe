@@ -152,6 +152,49 @@
 
   .hide{display:none !important;}
   footer.creds{text-align:center; font-size:11px; color:var(--texte-doux); margin:24px 0 8px;}
+
+  /* Tuile mise en avant (Mode schéma) */
+  .mode.feat{grid-column:1 / -1; flex-direction:row; align-items:center; gap:14px; min-height:auto;
+    background:linear-gradient(135deg, var(--carte), var(--bleu-clair)); border-color:var(--bleu);}
+  .mode.feat .emo{font-size:34px;}
+  .mode.feat b{font-size:16px;}
+
+  /* ===== MODE SCHÉMA ===== */
+  .sch-card{padding:16px 12px;}
+  .sch{display:flex; flex-direction:column; align-items:center;}
+  .sch-node{font-weight:800; font-size:14px; padding:9px 16px; border-radius:12px; background:var(--carte); border:2px solid var(--bord);}
+  .sch-fourgon{background:var(--texte); color:var(--fond); border-color:var(--texte);}
+  .sch-link{width:3px; height:20px; background:var(--bord); position:relative; display:flex; align-items:center; justify-content:center; flex:none;}
+  .sch-ins{position:absolute; width:28px; height:28px; border-radius:50%; border:1px solid var(--bord); background:var(--carte); color:var(--bleu); font-size:17px; font-weight:800; line-height:1; cursor:pointer; padding:0; opacity:.9;}
+  .sch-ins:active{transform:scale(.9); background:var(--bleu-clair);}
+  .sch-pipe{display:flex; flex-direction:column; align-items:flex-start; gap:1px; min-width:140px; max-width:220px; background:var(--carte); border:2px solid var(--bord); border-left:10px solid var(--bord); border-radius:10px; padding:8px 12px; cursor:pointer; min-height:48px;}
+  .sch-pipe .pd{font-weight:800; font-size:15px;}
+  .sch-pipe .pl{font-size:12px; color:var(--texte-doux); font-weight:700;}
+  .sch-pipe:active{transform:scale(.98);}
+  .sch-division{font-weight:800; font-size:14px; padding:9px 18px; border-radius:30px; background:var(--bleu-clair); border:2px solid var(--bleu); color:var(--bleu); cursor:pointer;}
+  .sch-division:active{transform:scale(.97);}
+  .sch-branches{display:flex; gap:8px; align-items:flex-start; justify-content:center; width:100%; margin-top:2px;}
+  .sch-branch{flex:1 1 0; min-width:0; display:flex; flex-direction:column; align-items:center; border-top:3px solid var(--bord); padding-top:4px;}
+  .sch-branch.worst{border-top-color:var(--rouge);}
+  .sch-branch.worst .sch-lance{border-color:var(--rouge); box-shadow:0 0 0 2px var(--rouge-clair) inset;}
+  .sch-branch .sch-pipe{min-width:0; width:100%; max-width:none; padding:7px 9px;}
+  .sch-branch .sch-pipe .pd{font-size:14px;}
+  .sch-branch-x{align-self:flex-end; border:none; background:transparent; color:var(--rouge); font-size:14px; font-weight:800; cursor:pointer; padding:0 2px; line-height:1;}
+  .sch-lance{display:flex; align-items:center; gap:8px; background:var(--carte); border:2px solid var(--bord); border-radius:12px; padding:8px 12px; cursor:pointer; min-height:48px; max-width:100%;}
+  .sch-lance .ico{font-size:20px;}
+  .sch-lance b{font-size:14px; display:block;}
+  .sch-lance small{font-size:11px; color:var(--texte-doux); font-weight:700;}
+  .sch-add{border:2px dashed var(--bleu); background:transparent; color:var(--bleu); border-radius:12px; padding:9px 12px; font-size:13px; font-weight:700; cursor:pointer; min-height:48px; max-width:100%;}
+  .sch-add:active{background:var(--bleu-clair);}
+
+  /* Feuille d'action (modale bas d'écran) */
+  .sheet-ov{position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:60; display:flex; align-items:flex-end; justify-content:center;}
+  .sheet{background:var(--carte); width:100%; max-width:720px; border-radius:20px 20px 0 0; padding:16px 16px calc(18px + env(safe-area-inset-bottom)); max-height:88vh; overflow:auto; box-shadow:0 -6px 30px rgba(0,0,0,.35);}
+  .sheet-h{margin:2px 0 10px; font-size:16px;}
+  .sheet-ok{width:100%; border:none; background:var(--rouge); color:#fff; border-radius:12px; padding:14px; font-size:16px; font-weight:800; cursor:pointer; margin-top:10px; min-height:54px;}
+  .sheet-alt{width:100%; border:2px solid var(--bord); background:var(--carte); color:var(--texte); border-radius:12px; padding:14px; font-size:15px; font-weight:700; cursor:pointer; margin-top:8px; min-height:54px; text-align:left;}
+  .sheet-alt:active{background:var(--bleu-clair);}
+  .sheet-rm{width:100%; border:none; background:transparent; color:var(--rouge); border-radius:12px; padding:12px; font-size:14px; font-weight:700; cursor:pointer; margin-top:6px;}
 </style>
 </head>
 <body>
@@ -169,6 +212,7 @@
       <button class="mode" data-go="dispositif"><span class="emo" aria-hidden="true">🔀</span><b>Dispositif (division)</b><span>Départs en parallèle après division. Départ le plus défavorable.</span></button>
       <button class="mode" data-go="relais"><span class="emo" aria-hidden="true">🔗</span><b>Relais</b><span>Longue distance : méthode en 6 étapes (nb d'engins, emplacements).</span></button>
       <button class="mode" data-go="table"><span class="emo" aria-hidden="true">📋</span><b>Table & repères</b><span>Table des pertes de charge + calcul d'une perte sur 1 tronçon.</span></button>
+      <button class="mode feat" data-go="schema"><span class="emo" aria-hidden="true">🖍️</span><span><b>Mode schéma (visuel)</b><span>Dessine l'établissement en quelques touches : fourgon → tuyaux → division → lances. Idéal terrain.</span></span></button>
     </div>
     <div class="note">Outil d'aide au calcul (formation COD1). Vérifie toujours au manomètre — tu restes maître de ta pompe. Les pertes singulières (coudes, accessoires) ne sont pas comptées.</div>
   </main>
@@ -376,6 +420,14 @@ const ST = {
   },
   relais: { PN:26.3, PD:15, AB:880, BC:60, Jab:2.2, Jbc:1.5, Plance:6 },
   table:  { hose:'45', Q:500, L:20 },
+  // Mode schéma : tronc (tuyaux) -> terminal = lance (ligne simple) OU division -> départs
+  schema: {
+    trunk: [ {hose:'45', L:40} ],
+    hasDivision: false,
+    lance: { Q:600, Pl:6 },     // utilisé si !hasDivision (lance en bout de tronc)
+    branches: [],               // si hasDivision : [{hoses:[{hose,L}], lance:{Q,Pl}|null}]
+    z: 0
+  },
 };
 const DEFAULTS = JSON.parse(JSON.stringify(ST));
 const stateKeyFor = (scr)=> (scr==='rapide'||scr==='dispositif') ? 'etab' : scr;
@@ -385,7 +437,7 @@ function persist(){ try{ localStorage.setItem('cod1-state-v2', JSON.stringify(ST
 /* ============================================================
    NAVIGATION (avec gestion du bouton retour système)
    ============================================================ */
-const TITLES = { rapide:['🔥','Calcul rapide'], dispositif:['🔀','Dispositif'], relais:['🔗','Relais'], table:['📋','Table & repères'] };
+const TITLES = { rapide:['🔥','Calcul rapide'], dispositif:['🔀','Dispositif'], relais:['🔗','Relais'], table:['📋','Table & repères'], schema:['🖍️','Mode schéma'] };
 const homeEl=document.getElementById('home'), screenEl=document.getElementById('screen');
 const titleEl=document.getElementById('title'), backBtn=document.getElementById('btnBack');
 const resetBtn=document.getElementById('btnReset'), themeBtn=document.getElementById('btnTheme');
@@ -638,6 +690,238 @@ J = ${HOSES[s.hose].Jn} × (${s.Q}/${HOSES[s.hose].Qn})² × ${s.L}/100</div>`;
   }
   recompute();
 };
+
+/* ============================================================
+   MODE SCHÉMA — constructeur visuel (branché sur calculDispositif)
+   Modèle : ST.schema = { trunk:[{hose,L}], hasDivision, lance:{Q,Pl}|null,
+                          branches:[{hoses:[{hose,L}], lance:{Q,Pl}|null}], z }
+   Débit jamais saisi sur un tuyau : il vient des lances (tronc = somme).
+   ============================================================ */
+const SCH_COLOR = {'22sr':'#e08a00','22':'#e08a00','45':'#1b9e4b','70':'#0b6bd6','110':'#7a3ff0','150':'#c1121f'};
+const SCH_W = {'22sr':6,'22':6,'45':8,'70':11,'110':14,'150':16};
+const LANCE_Q_PRESETS = [250,500,600,1000];
+
+function trunkDebit(){
+  const s = ST.schema;
+  if(s.hasDivision){
+    const qs = s.branches.filter(b=>b.lance).map(b=>Number(b.lance.Q));
+    return qs.length ? qs.reduce((a,b)=>a+b,0) : null;
+  }
+  return s.lance ? Number(s.lance.Q) : null;
+}
+
+// Mappe le schéma vers le moteur validé (calculDispositif)
+function schemaCalc(){
+  const s = ST.schema;
+  if(!s.hasDivision){
+    if(!s.lance) return { complete:false, hasDivision:false };
+    const d = calculDispositif({ troncons:s.trunk, z:s.z }, [{ troncons:[], Q:s.lance.Q, Pl:s.lance.Pl, z:0 }]);
+    return { complete:true, hasDivision:false, d };
+  }
+  if(!s.branches.length || s.branches.some(b=>!b.lance)) return { complete:false, hasDivision:true };
+  const lances = s.branches.map(b=> ({ troncons:b.hoses, Q:b.lance.Q, Pl:b.lance.Pl, z:0 }));
+  const d = calculDispositif({ troncons:s.trunk, z:s.z }, lances);
+  return { complete:true, hasDivision:true, d };
+}
+
+/* --- petites briques visuelles --- */
+function schPipe(seg, onTap){
+  const b = el(`<button type="button" class="sch-pipe" style="border-left-color:${SCH_COLOR[seg.hose]||'#888'};border-left-width:${SCH_W[seg.hose]||8}px">
+    <span class="pd">${HOSES[seg.hose].label}</span><span class="pl">${seg.L} m</span></button>`);
+  b.onclick = onTap; return b;
+}
+function schLink(onInsert){
+  const w = el(`<div class="sch-link"><button type="button" class="sch-ins" aria-label="Insérer un tuyau ici">＋</button></div>`);
+  w.querySelector('.sch-ins').onclick = onInsert; return w;
+}
+function schLance(lance, debit, onTap){
+  const b = el(`<button type="button" class="sch-lance"><span class="ico" aria-hidden="true">🔫</span><span><b>Lance</b><small>${debit==null?'—':debit+' L/min'} · ${fb(lance.Pl)} b</small></span></button>`);
+  b.onclick = onTap; return b;
+}
+
+/* --- rendu de l'écran --- */
+function renderSchema(){
+  const s = ST.schema;
+  screenEl.innerHTML='';
+  const card = el(`<div class="card sch-card"></div>`);
+  const draw = el(`<div class="sch"></div>`); card.appendChild(draw);
+  card.appendChild(el(`<div class="note" style="margin-top:14px">Touche <b>＋</b> pour ajouter/insérer un tuyau · touche un <b>élément</b> pour le modifier ou le retirer.</div>`));
+  screenEl.appendChild(card);
+
+  const qTronc = trunkDebit();
+  draw.appendChild(el(`<div class="sch-node sch-fourgon">🚒 Fourgon${qTronc!=null?` · ${qTronc} L/min`:''}</div>`));
+
+  s.trunk.forEach((seg,i)=>{
+    draw.appendChild(schLink(()=> addTuyauSheet(s.trunk, i)));
+    draw.appendChild(schPipe(seg, ()=> pipeSheet(s.trunk, i)));
+  });
+  draw.appendChild(schLink(()=> addTuyauSheet(s.trunk, s.trunk.length)));
+
+  if(s.hasDivision){
+    const dv = el(`<button type="button" class="sch-division">⑂ Division${qTronc!=null?` · ${qTronc} L/min`:''}</button>`);
+    dv.onclick = divisionSheet; draw.appendChild(dv);
+    const row = el(`<div class="sch-branches"></div>`);
+    s.branches.forEach((b,bi)=> row.appendChild(renderBranch(b,bi)));
+    draw.appendChild(row);
+  } else if(s.lance){
+    draw.appendChild(schLance(s.lance, qTronc, lanceTerminalSheet));
+  } else {
+    const add = el(`<button type="button" class="sch-add">＋ Ajouter (tuyau / division / lance)</button>`);
+    add.onclick = trunkEndSheet; draw.appendChild(add);
+  }
+
+  const dz = el(`<div class="card"><h2>Dénivelé global</h2><div class="note">Hauteur de la lance par rapport à la pompe (compté une fois).</div></div>`);
+  const res = el(`<div class="result"></div>`);
+  dz.appendChild(deniveleField(()=>s.z, (v)=>{ s.z=v; }, ()=> paintSchemaResult(res)));
+  screenEl.appendChild(dz);
+  screenEl.appendChild(res);
+  paintSchemaResult(res);
+}
+
+function renderBranch(b, bi){
+  const col = el(`<div class="sch-branch" data-bi="${bi}"></div>`);
+  const x = el(`<button type="button" class="sch-branch-x" aria-label="Retirer le départ ${bi+1}">✕</button>`);
+  x.onclick = ()=> removeBranch(bi); col.appendChild(x);
+  b.hoses.forEach((seg,i)=>{
+    col.appendChild(schLink(()=> addTuyauSheet(b.hoses, i)));
+    col.appendChild(schPipe(seg, ()=> pipeSheet(b.hoses, i)));
+  });
+  col.appendChild(schLink(()=> addTuyauSheet(b.hoses, b.hoses.length)));
+  if(b.lance){
+    col.appendChild(schLance(b.lance, Number(b.lance.Q), ()=> branchLanceSheet(bi)));
+  } else {
+    const add = el(`<button type="button" class="sch-add">＋ Lance / tuyau</button>`);
+    add.onclick = ()=> branchEndSheet(bi); col.appendChild(add);
+  }
+  return col;
+}
+
+/* --- résultat --- */
+function paintSchemaResult(res){
+  const c = schemaCalc();
+  if(!c.complete){
+    res.className='result warn-pr';
+    const quoi = c.hasDivision ? 'à chaque départ' : 'au bout de la ligne';
+    res.innerHTML = `<div class="big">Établissement</div><div class="alerte" style="margin-top:6px">⚠️ Termine ton établissement : ajoute une lance ${quoi}.</div>`;
+    persist(); return;
+  }
+  const d = c.d, z = Number(ST.schema.z);
+  const details = [];
+  if(c.hasDivision){
+    d.detail.forEach((dl,i)=> details.push(['Départ '+(i+1)+(i===d.worst?' (déterminant)':''), fb(dl.pDivision)+' b à la division']));
+    details.push(['Tronc commun ('+d.Qtot+' L/min)', '+'+fb(d.Jtronc)+' b']);
+  } else {
+    details.push(['Pertes de charge', '+'+fb(d.Jtronc + (d.detail[0]?d.detail[0].J:0))+' b']);
+    details.push(['Pression à la lance', '+'+fb(d.detail[0].Pl)+' b']);
+  }
+  if(z!==0) details.push(['Dénivelé ('+fz(z)+')', sgn(d.Ztronc)+fb(d.Ztronc)+' b']);
+  const alerts = [];
+  if(d.PR>PR_MAX) alerts.push({type:'warn', text:`⚠️ Pression élevée (> ${PR_MAX} b) : envisager un relais.`});
+  if(c.hasDivision) alerts.push({type:'info', text:'Départ déterminant : n°'+(d.worst+1)+' (perte la plus forte).'});
+  paintResult(res, d.PR, details, alerts);
+  if(c.hasDivision) document.querySelectorAll('.sch-branch').forEach((col,i)=> col.classList.toggle('worst', i===d.worst));
+  persist();
+}
+
+/* --- feuille d'action (modale) --- */
+function openSheet(node){
+  closeSheet();
+  const ov = el(`<div class="sheet-ov"></div>`);
+  const sh = el(`<div class="sheet"></div>`); sh.appendChild(node); ov.appendChild(sh);
+  ov.onclick = (e)=>{ if(e.target===ov) closeSheet(); };
+  document.body.appendChild(ov);
+}
+function closeSheet(){ const e=document.querySelector('.sheet-ov'); if(e) e.remove(); }
+
+function tuyauForm(initHose, initL){
+  const wrap = el(`<div></div>`);
+  let hose=initHose, L=initL;
+  wrap.appendChild(el('<div class="field"><label>Diamètre</label></div>')).appendChild(hoseSelector(()=>hose,(k)=>{hose=k;},()=>{}));
+  wrap.appendChild(stepper({label:'Longueur', value:L, step:20, min:0, unit:'m', presets:L_PRESETS, onChange:(v)=>{L=v;}}).el);
+  return { el:wrap, get:()=>({hose, L:L||0}) };
+}
+function addTuyauSheet(arr, index){
+  const ref = arr.length ? (arr[Math.min(index, arr.length-1)] || arr[arr.length-1]) : null;
+  const body = el(`<div><h3 class="sheet-h">${index<arr.length?'Insérer':'Ajouter'} un tuyau</h3></div>`);
+  const form = tuyauForm(ref?ref.hose:'45', 40); body.appendChild(form.el);
+  const ok = el(`<button type="button" class="sheet-ok">${index<arr.length?'Insérer':'Ajouter'}</button>`);
+  ok.onclick = ()=>{ arr.splice(index,0,form.get()); closeSheet(); renderSchema(); };
+  body.appendChild(ok); openSheet(body);
+}
+function pipeSheet(arr, i){
+  const seg = arr[i];
+  const body = el(`<div><h3 class="sheet-h">Tuyau ${HOSES[seg.hose].label} · ${seg.L} m</h3></div>`);
+  const form = tuyauForm(seg.hose, seg.L); body.appendChild(form.el);
+  const ok = el(`<button type="button" class="sheet-ok">Modifier</button>`);
+  ok.onclick = ()=>{ const v=form.get(); seg.hose=v.hose; seg.L=v.L; closeSheet(); renderSchema(); };
+  const rm = el(`<button type="button" class="sheet-rm">Retirer ce tuyau</button>`);
+  rm.onclick = ()=>{ arr.splice(i,1); closeSheet(); renderSchema(); };
+  body.appendChild(ok); body.appendChild(rm); openSheet(body);
+}
+function lanceForm(lanceObj){
+  const wrap = el(`<div></div>`);
+  let Q = lanceObj?lanceObj.Q:600, Pl = lanceObj?lanceObj.Pl:6;
+  wrap.appendChild(stepper({label:'Débit', value:Q, step:50, min:0, unit:'L/min', presets:LANCE_Q_PRESETS, onChange:(v)=>{Q=v;}}).el);
+  wrap.appendChild(stepper({label:'Pression à la lance', value:Pl, step:0.5, min:0, unit:'bar', presets:[3,6,7,8], onChange:(v)=>{Pl=v;}}).el);
+  return { el:wrap, get:()=>({Q:Q||0, Pl:Pl||0}) };
+}
+function lanceEditSheet(lanceObj, apply, opts){
+  opts = opts||{};
+  const body = el(`<div><h3 class="sheet-h">Lance</h3></div>`);
+  const form = lanceForm(lanceObj); body.appendChild(form.el);
+  const ok = el(`<button type="button" class="sheet-ok">Valider</button>`);
+  ok.onclick = ()=>{ apply(form.get()); closeSheet(); renderSchema(); };
+  body.appendChild(ok);
+  (opts.extra||[]).forEach(x=>{ const b=el(`<button type="button" class="sheet-alt">${x.label}</button>`); b.onclick=()=>{ x.fn(); closeSheet(); renderSchema(); }; body.appendChild(b); });
+  if(opts.onRemove){ const rm=el(`<button type="button" class="sheet-rm">Retirer la lance</button>`); rm.onclick=()=>{ opts.onRemove(); closeSheet(); renderSchema(); }; body.appendChild(rm); }
+  openSheet(body);
+}
+function lanceTerminalSheet(){
+  const s = ST.schema;
+  lanceEditSheet(s.lance, (v)=>{ s.lance=v; }, {
+    extra:[{ label:'⑂ Poser une division ici', fn:()=>{ s.branches=[{hoses:[],lance:s.lance},{hoses:[],lance:{Q:600,Pl:6}}]; s.lance=null; s.hasDivision=true; } }],
+    onRemove:()=>{ s.lance=null; }
+  });
+}
+function branchLanceSheet(bi){
+  const b = ST.schema.branches[bi];
+  lanceEditSheet(b.lance, (v)=>{ b.lance=v; }, { onRemove:()=>{ b.lance=null; } });
+}
+function branchEndSheet(bi){
+  const b = ST.schema.branches[bi];
+  const body = el(`<div><h3 class="sheet-h">Ajouter au départ ${bi+1}</h3></div>`);
+  const t = el(`<button type="button" class="sheet-alt">🧯 Un tuyau</button>`); t.onclick=()=>{ closeSheet(); addTuyauSheet(b.hoses, b.hoses.length); };
+  const l = el(`<button type="button" class="sheet-alt">🔫 Une lance</button>`); l.onclick=()=>{ closeSheet(); lanceEditSheet(null,(v)=>{ b.lance=v; }); };
+  body.appendChild(t); body.appendChild(l); openSheet(body);
+}
+function trunkEndSheet(){
+  const s = ST.schema;
+  const body = el(`<div><h3 class="sheet-h">Ajouter</h3></div>`);
+  const t = el(`<button type="button" class="sheet-alt">🧯 Un tuyau</button>`); t.onclick=()=>{ closeSheet(); addTuyauSheet(s.trunk, s.trunk.length); };
+  const d = el(`<button type="button" class="sheet-alt">⑂ Une division</button>`); d.onclick=()=>{ s.hasDivision=true; s.lance=null; s.branches=[{hoses:[],lance:{Q:600,Pl:6}},{hoses:[],lance:{Q:600,Pl:6}}]; closeSheet(); renderSchema(); };
+  const l = el(`<button type="button" class="sheet-alt">🔫 Une lance</button>`); l.onclick=()=>{ closeSheet(); lanceEditSheet(null,(v)=>{ s.lance=v; }); };
+  body.appendChild(t); body.appendChild(d); body.appendChild(l); openSheet(body);
+}
+function divisionSheet(){
+  const s = ST.schema;
+  const body = el(`<div><h3 class="sheet-h">Division</h3></div>`);
+  if(s.branches.length < 3){ const a=el(`<button type="button" class="sheet-alt">＋ Ajouter un départ</button>`); a.onclick=()=>{ s.branches.push({hoses:[],lance:{Q:600,Pl:6}}); closeSheet(); renderSchema(); }; body.appendChild(a); }
+  const rm = el(`<button type="button" class="sheet-rm">Retirer la division</button>`);
+  rm.onclick = ()=>{ collapseDivision(); closeSheet(); renderSchema(); };
+  body.appendChild(rm); openSheet(body);
+}
+function collapseDivision(){
+  const s = ST.schema; const first = s.branches[0];
+  s.trunk = s.trunk.concat(first?first.hoses:[]);
+  s.lance = (first && first.lance) ? first.lance : {Q:600, Pl:6};
+  s.hasDivision = false; s.branches = [];
+}
+function removeBranch(bi){
+  const s = ST.schema; s.branches.splice(bi,1);
+  if(s.branches.length < 2) collapseDivision();
+  renderSchema();
+}
+RENDER.schema = renderSchema;
 
 /* ============================================================
    Masquer le résultat sticky pendant la saisie clavier (petit écran)
