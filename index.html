@@ -758,10 +758,10 @@ function renderSchema(){
   draw.appendChild(el(`<div class="sch-node sch-fourgon">🚒 Fourgon${qTronc!=null?` · ${qTronc} L/min`:''}</div>`));
 
   s.trunk.forEach((seg,i)=>{
-    draw.appendChild(schLink(()=> addTuyauSheet(s.trunk, i)));
+    draw.appendChild(schLink(()=> trunkInsert(i)));
     draw.appendChild(schPipe(seg, ()=> pipeSheet(s.trunk, i)));
   });
-  draw.appendChild(schLink(()=> addTuyauSheet(s.trunk, s.trunk.length)));
+  draw.appendChild(schLink(()=> trunkInsert(s.trunk.length)));
 
   if(s.hasDivision){
     const dv = el(`<button type="button" class="sch-division">⑂ Division${qTronc!=null?` · ${qTronc} L/min`:''}</button>`);
@@ -858,6 +858,23 @@ function addTuyauSheet(arr, index){
   const ok = el(`<button type="button" class="sheet-ok">${index<arr.length?'Insérer':'Ajouter'}</button>`);
   ok.onclick = ()=>{ arr.splice(index,0,form.get()); closeSheet(); renderSchema(); };
   body.appendChild(ok); openSheet(body);
+}
+// «＋» de la ligne principale : choix tuyau / division (division impossible si une division existe déjà).
+function trunkInsert(index){
+  const s = ST.schema;
+  if(s.hasDivision){ addTuyauSheet(s.trunk, index); return; }   // pas de division imbriquée
+  const body = el(`<div><h3 class="sheet-h">Insérer ici</h3></div>`);
+  const t = el(`<button type="button" class="sheet-alt">🧯 Un tuyau</button>`); t.onclick=()=>{ closeSheet(); addTuyauSheet(s.trunk, index); };
+  const d = el(`<button type="button" class="sheet-alt">⑂ Une division</button>`); d.onclick=()=>{ insertDivisionAt(index); closeSheet(); renderSchema(); };
+  body.appendChild(t); body.appendChild(d); openSheet(body);
+}
+// Insère une division au point index : ce qui suit (tuyaux restants + lance) devient le 1er départ.
+function insertDivisionAt(index){
+  const s = ST.schema;
+  const after = s.trunk.slice(index);
+  s.trunk = s.trunk.slice(0, index);
+  s.branches = [{ hoses: after, lance: s.lance || null }];
+  s.lance = null; s.hasDivision = true;
 }
 function pipeSheet(arr, i){
   const seg = arr[i];
