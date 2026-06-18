@@ -186,6 +186,12 @@
   .sch-lance small{font-size:11px; color:var(--texte-doux); font-weight:700;}
   .sch-add{border:2px dashed var(--bleu); background:transparent; color:var(--bleu); border-radius:12px; padding:9px 12px; font-size:13px; font-weight:700; cursor:pointer; min-height:48px; max-width:100%;}
   .sch-add:active{background:var(--bleu-clair);}
+  .sch-branch-ph{flex:1 1 0; min-width:0; display:flex; flex-direction:column; align-items:center; padding-top:8px;}
+  .sch-closed{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; width:100%; min-height:62px; border:2px dashed var(--bord); background:transparent; color:var(--texte-doux); border-radius:12px; padding:8px 6px; cursor:pointer; font-weight:700;}
+  .sch-closed .ico{font-size:18px;}
+  .sch-closed span{font-size:10px;}
+  .sch-closed b{font-size:11px; color:var(--bleu);}
+  .sch-closed:active{background:var(--bleu-clair);}
 
   /* Feuille d'action (modale bas d'écran) */
   .sheet-ov{position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:60; display:flex; align-items:flex-end; justify-content:center;}
@@ -762,6 +768,11 @@ function renderSchema(){
     dv.onclick = divisionSheet; draw.appendChild(dv);
     const row = el(`<div class="sch-branches"></div>`);
     s.branches.forEach((b,bi)=> row.appendChild(renderBranch(b,bi)));
+    if(s.branches.length < 3){   // sortie(s) libre(s) de la division = robinet fermé, ouvrable plus tard
+      const ph = el(`<div class="sch-branch-ph"><button type="button" class="sch-closed" aria-label="Ouvrir un départ (robinet actuellement fermé)"><span class="ico" aria-hidden="true">🚱</span><span>robinet fermé</span><b>＋ ouvrir un départ</b></button></div>`);
+      ph.querySelector('.sch-closed').onclick = ()=>{ s.branches.push({hoses:[], lance:{Q:600, Pl:6}}); renderSchema(); };
+      row.appendChild(ph);
+    }
     draw.appendChild(row);
   } else if(s.lance){
     draw.appendChild(schLance(s.lance, qTronc, lanceTerminalSheet));
@@ -879,7 +890,7 @@ function lanceEditSheet(lanceObj, apply, opts){
 function lanceTerminalSheet(){
   const s = ST.schema;
   lanceEditSheet(s.lance, (v)=>{ s.lance=v; }, {
-    extra:[{ label:'⑂ Poser une division ici', fn:()=>{ s.branches=[{hoses:[],lance:s.lance},{hoses:[],lance:{Q:600,Pl:6}}]; s.lance=null; s.hasDivision=true; } }],
+    extra:[{ label:'⑂ Poser une division ici', fn:()=>{ s.branches=[{hoses:[],lance:s.lance}]; s.lance=null; s.hasDivision=true; } }],
     onRemove:()=>{ s.lance=null; }
   });
 }
@@ -898,7 +909,7 @@ function trunkEndSheet(){
   const s = ST.schema;
   const body = el(`<div><h3 class="sheet-h">Ajouter</h3></div>`);
   const t = el(`<button type="button" class="sheet-alt">🧯 Un tuyau</button>`); t.onclick=()=>{ closeSheet(); addTuyauSheet(s.trunk, s.trunk.length); };
-  const d = el(`<button type="button" class="sheet-alt">⑂ Une division</button>`); d.onclick=()=>{ s.hasDivision=true; s.lance=null; s.branches=[{hoses:[],lance:{Q:600,Pl:6}},{hoses:[],lance:{Q:600,Pl:6}}]; closeSheet(); renderSchema(); };
+  const d = el(`<button type="button" class="sheet-alt">⑂ Une division</button>`); d.onclick=()=>{ s.hasDivision=true; s.lance=null; s.branches=[{hoses:[],lance:{Q:600,Pl:6}}]; closeSheet(); renderSchema(); };
   const l = el(`<button type="button" class="sheet-alt">🔫 Une lance</button>`); l.onclick=()=>{ closeSheet(); lanceEditSheet(null,(v)=>{ s.lance=v; }); };
   body.appendChild(t); body.appendChild(d); body.appendChild(l); openSheet(body);
 }
@@ -918,7 +929,9 @@ function collapseDivision(){
 }
 function removeBranch(bi){
   const s = ST.schema; s.branches.splice(bi,1);
-  if(s.branches.length < 2) collapseDivision();
+  // Une division peut rester avec 1 seul départ (l'autre sortie = robinet fermé).
+  // On ne retire la division que s'il ne reste plus aucun départ.
+  if(s.branches.length === 0){ s.hasDivision = false; s.lance = null; }
   renderSchema();
 }
 RENDER.schema = renderSchema;

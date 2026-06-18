@@ -1,7 +1,7 @@
 /* Service worker — usage hors-ligne.
    IMPORTANT : incrémenter CACHE à CHAQUE modification d'index.html ou d'un asset,
    pour que la nouvelle version (notamment le moteur de calcul) soit déployée. */
-const CACHE = 'cod1-pompe-v4';
+const CACHE = 'cod1-pompe-v5';
 const ASSETS = [
   './',
   './index.html',
