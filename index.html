@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#b30000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>COD1 — Pression de refoulement</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  :root{
+    --rouge:#c1121f; --rouge-fonce:#9d0208; --rouge-clair:#ffe3e3;
+    --fond:#f4f5f7; --carte:#ffffff; --texte:#15181c; --texte-doux:#5b6470;
+    --bord:#d7dce3; --ok:#1b7f3b; --warn:#b25e00; --warn-fond:#fff3d6;
+    --bleu:#0b5cab; --bleu-clair:#e3eefc; --focus:#0b5cab;
+    --ombre:0 2px 10px rgba(0,0,0,.07); --r:16px;
+    --tap:64px;
+  }
+  html[data-theme="nuit"]{
+    --rouge-clair:#3a1416; --fond:#0d1014; --carte:#171b21; --texte:#f1f3f6; --texte-doux:#9aa4b2;
+    --bord:#2a313b; --warn-fond:#37290d; --bleu:#5aa9ff; --bleu-clair:#0f2138; --focus:#5aa9ff;
+    --ombre:0 2px 12px rgba(0,0,0,.5);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    background:var(--fond); color:var(--texte); line-height:1.35;
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    -webkit-text-size-adjust:100%;
+  }
+  .app{max-width:720px; margin:0 auto; padding:12px 14px 300px;}
+  header.bar{
+    display:flex; align-items:center; gap:10px; padding:8px 2px 14px; position:sticky; top:0; z-index:30;
+    background:linear-gradient(var(--fond) 70%, transparent);
+  }
+  header.bar h1{font-size:18px; margin:0; flex:1; font-weight:800; letter-spacing:.2px;}
+  header.bar h1 small{display:block; font-weight:600; font-size:12px; color:var(--texte-doux);}
+  .iconbtn{
+    min-width:52px; height:52px; border:1px solid var(--bord); background:var(--carte);
+    border-radius:12px; color:var(--texte); font-size:22px; display:flex; align-items:center;
+    justify-content:center; cursor:pointer;
+  }
+  .iconbtn:active{transform:scale(.95);}
+
+  /* Focus clavier visible (WCAG 2.4.7) */
+  a:focus-visible,button:focus-visible,input:focus-visible,
+  .chip:focus-visible,.stepper button:focus-visible,.mode:focus-visible,
+  .iconbtn:focus-visible,.addbtn:focus-visible,.delbtn:focus-visible,.val input:focus-visible{
+    outline:3px solid #fff; box-shadow:0 0 0 6px var(--focus); border-radius:12px; position:relative; z-index:5;
+  }
+
+  /* Accueil */
+  .grid{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .mode{
+    background:var(--carte); border:1px solid var(--bord); border-radius:var(--r);
+    padding:18px 14px; text-align:left; cursor:pointer; box-shadow:var(--ombre);
+    display:flex; flex-direction:column; gap:6px; min-height:120px; color:var(--texte);
+  }
+  .mode:active{transform:scale(.98);}
+  .mode .emo{font-size:30px;}
+  .mode b{font-size:17px;}
+  .mode span{font-size:12.5px; color:var(--texte-doux);}
+
+  /* Cartes */
+  .card{background:var(--carte); border:1px solid var(--bord); border-radius:var(--r); padding:14px; margin:12px 0; box-shadow:var(--ombre);}
+  .card.lance-card.worst{border-color:var(--rouge); box-shadow:0 0 0 2px var(--rouge) inset, var(--ombre);}
+  .card h2{margin:0 0 10px; font-size:15px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+  .card h2 .tag{font-size:11px; background:var(--rouge-clair); color:var(--rouge); padding:2px 8px; border-radius:20px; font-weight:700;}
+  html[data-theme="nuit"] .card h2 .tag{color:#ff8a8a;}
+  .badge{font-size:10.5px; background:var(--rouge); color:#fff; padding:2px 8px; border-radius:20px; font-weight:800;}
+  .field{margin:14px 0;}
+  .field>label{display:block; font-size:13px; font-weight:700; margin-bottom:8px; color:var(--texte-doux);}
+  .field .hint{font-weight:500; color:var(--texte-doux); font-size:11.5px;}
+
+  /* Chips */
+  .chips{display:flex; flex-wrap:wrap; gap:8px;}
+  .chip{
+    border:2px solid var(--bord); background:var(--carte); color:var(--texte);
+    border-radius:12px; padding:10px 12px; font-size:15px; font-weight:700; cursor:pointer;
+    min-height:52px; flex:1 1 auto; min-width:64px; text-align:center;
+  }
+  .chip small{display:block; font-weight:600; font-size:10.5px; color:var(--texte-doux);}
+  .chip.on{border-color:var(--rouge); background:var(--rouge); color:#fff;}
+  .chip.on small{color:#ffe3e3;}
+  .chip:active{transform:scale(.97);}
+
+  /* Stepper */
+  .stepper{display:flex; align-items:stretch; gap:8px;}
+  .stepper button{
+    width:var(--tap); min-height:56px; font-size:30px; font-weight:800; border:2px solid var(--bord);
+    background:var(--carte); color:var(--texte); border-radius:14px; cursor:pointer; line-height:1;
+  }
+  .stepper button:active{transform:scale(.95); background:var(--rouge); color:#fff; border-color:var(--rouge);}
+  .stepper .val{
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    border:2px solid var(--bord); border-radius:14px; background:var(--fond); padding:4px;
+  }
+  .stepper .val span{font-size:11px; color:var(--texte-doux);}
+  .stepper .val input{
+    width:100%; text-align:center; font-size:30px; font-weight:800; border:none; background:transparent;
+    color:var(--texte);
+  }
+
+  .addbtn{
+    width:100%; border:2px dashed var(--bord); background:transparent; color:var(--bleu);
+    border-radius:12px; padding:12px; font-size:14px; font-weight:700; cursor:pointer; margin-top:4px;
+  }
+  .addbtn:active{background:var(--bleu-clair);}
+  .delbtn{border:none; background:transparent; color:var(--rouge); font-size:13px; font-weight:700; cursor:pointer; padding:6px;}
+  .troncon{border:1px dashed var(--bord); border-radius:12px; padding:10px; margin:8px 0; background:var(--fond);}
+  .troncon .thead{display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;}
+  .troncon .thead b{font-size:13px;}
+
+  /* Résultat */
+  .result{
+    position:sticky; bottom:12px; margin-top:16px; background:var(--rouge); color:#fff;
+    border-radius:20px; padding:16px 18px; box-shadow:0 6px 22px rgba(157,2,8,.4); z-index:20;
+    max-height:48vh; overflow:auto;
+  }
+  body.kb-open .result{display:none;}
+  .result .big{font-size:13px; opacity:.92; font-weight:700; text-transform:uppercase; letter-spacing:.5px;}
+  .result .pr{font-size:66px; font-weight:900; line-height:1; margin:4px 0 2px; letter-spacing:-1px;}
+  .result .pr u{font-size:26px; text-decoration:none; font-weight:800; margin-left:4px;}
+  .result .consigne{font-size:17px; font-weight:800;}
+  .result .two{display:flex; gap:14px; margin:6px 0 2px;}
+  .result .two>div{flex:1;}
+  .result .two span{display:block; font-size:12px; opacity:.92; font-weight:700; text-transform:uppercase;}
+  .result .two b{font-size:46px; font-weight:900; line-height:1;}
+  .result .two b u{font-size:18px; text-decoration:none; margin-left:3px;}
+  .result .detail{margin-top:10px; font-size:12.5px; opacity:.95; border-top:1px solid rgba(255,255,255,.25); padding-top:8px; white-space:pre-line;}
+  .result.warn-pr{background:var(--warn);}
+  .result .alerte{margin-top:8px; background:rgba(0,0,0,.22); padding:8px 10px; border-radius:10px; font-size:12.5px; font-weight:700;}
+  .result .infoline{margin-top:8px; background:rgba(255,255,255,.16); padding:7px 10px; border-radius:10px; font-size:12.5px; font-weight:700;}
+
+  table.ref{width:100%; border-collapse:collapse; font-size:13.5px;}
+  table.ref th,table.ref td{border:1px solid var(--bord); padding:9px 8px; text-align:center;}
+  table.ref th{background:var(--rouge); color:#fff; font-size:12px;}
+  table.ref td:first-child{font-weight:800; text-align:left;}
+  table.ref tr:nth-child(even) td{background:var(--fond);}
+
+  .note{font-size:12.5px; color:var(--texte-doux); background:var(--fond); border-left:3px solid var(--bleu); padding:8px 10px; border-radius:6px; margin:10px 0;}
+  .steps{counter-reset:s; padding:0; margin:0; list-style:none;}
+  .steps li{position:relative; padding:8px 0 8px 36px; border-bottom:1px solid var(--bord); font-size:13.5px;}
+  .steps li:before{counter-increment:s; content:counter(s); position:absolute; left:0; top:8px; width:24px; height:24px; background:var(--bleu); color:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800;}
+  .steps li b{display:block;}
+  .steps li .v{color:var(--bleu); font-weight:800;}
+
+  .hide{display:none !important;}
+  footer.creds{text-align:center; font-size:11px; color:var(--texte-doux); margin:24px 0 8px;}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="bar">
+    <button class="iconbtn" id="btnBack" aria-label="Retour à l'accueil" style="display:none">‹</button>
+    <h1 id="title">🚒 COD1<small>Pression de refoulement</small></h1>
+    <button class="iconbtn" id="btnReset" aria-label="Réinitialiser ce calcul" title="Nouveau calcul" style="display:none">↺</button>
+    <button class="iconbtn" id="btnTheme" aria-label="Basculer mode jour / nuit">🌙</button>
+  </header>
+
+  <main id="home">
+    <div class="grid">
+      <button class="mode" data-go="rapide"><span class="emo" aria-hidden="true">🔥</span><b>Calcul rapide</b><span>1 lance en série. Possibilité de poser une division.</span></button>
+      <button class="mode" data-go="dispositif"><span class="emo" aria-hidden="true">🔀</span><b>Dispositif (division)</b><span>Départs en parallèle après division. Départ le plus défavorable.</span></button>
+      <button class="mode" data-go="relais"><span class="emo" aria-hidden="true">🔗</span><b>Relais</b><span>Longue distance : méthode en 6 étapes (nb d'engins, emplacements).</span></button>
+      <button class="mode" data-go="table"><span class="emo" aria-hidden="true">📋</span><b>Table & repères</b><span>Table des pertes de charge + calcul d'une perte sur 1 tronçon.</span></button>
+    </div>
+    <div class="note">Outil d'aide au calcul (formation COD1). Vérifie toujours au manomètre — tu restes maître de ta pompe. Les pertes singulières (coudes, accessoires) ne sont pas comptées.</div>
+  </main>
+
+  <main id="screen" class="hide"></main>
+
+  <footer class="creds">Pression de refoulement = pertes de charge + pression à la lance ± dénivelé · fonctionne hors-ligne</footer>
+</div>
+
+<script>
+"use strict";
+/* ============================================================
+   MOTEUR DE CALCUL (source : code Python + manuel stagiaire COD1)
+   J = Jn × (Q/Qn)² × L/100   [bar]
+   Dénivelé : Z(bar) = hauteur(m)/10  (montée = perte, descente = gain)
+   Pression refoulement = Σ pertes de charge + pression lance + Z
+   ============================================================ */
+const HOSES = {
+  '22sr': {label:'⌀22', sub:'semi-rigide', Qn:58,  Jn:2.2 },
+  '22':   {label:'⌀22', sub:'P.I.L',       Qn:58,  Jn:1.7 },
+  '45':   {label:'⌀45', sub:'',            Qn:250, Jn:1.5 },
+  '70':   {label:'⌀70', sub:'',            Qn:500, Jn:0.55},
+  '110':  {label:'⌀110',sub:'',            Qn:1000,Jn:0.28},
+  '150':  {label:'⌀150',sub:'non norm.',   Qn:2000,Jn:0.13},
+};
+const HOSE_ORDER = ['22sr','22','45','70','110','150'];
+const PR_MAX = 15; // au-delà : suggérer un relais
+
+function perteTroncon(hoseKey, Q, L){
+  const h = HOSES[hoseKey]; if(!h) return 0;
+  return h.Jn * Math.pow(Q / h.Qn, 2) * (L / 100);
+}
+function perteLigne(troncons, Q){
+  return troncons.reduce((s,t)=> s + perteTroncon(t.hose, Number(Q), Number(t.L)), 0);
+}
+function deniveleBar(metres){ return Number(metres) / 10; }
+
+function calculLigne(troncons, Q, Pl, zMetres){
+  const J = perteLigne(troncons, Q);
+  const Z = deniveleBar(zMetres);
+  return { J, Z, Pl:Number(Pl), Q:Number(Q), PR: J + Number(Pl) + Z };
+}
+function calculDispositif(tronc, lances){
+  const detail = lances.map(l=>{
+    const J = perteLigne(l.troncons, l.Q);
+    const Z = deniveleBar(l.z);
+    return { J, Z, Q:Number(l.Q), Pl:Number(l.Pl), pDivision: J + Number(l.Pl) + Z };
+  });
+  let worst = 0;
+  detail.forEach((d,i)=>{ if(detail[worst]===undefined || d.pDivision > detail[worst].pDivision) worst = i; });
+  const Qtot = lances.reduce((s,l)=> s + Number(l.Q), 0);
+  const Jtronc = perteLigne(tronc.troncons, Qtot);
+  const Ztronc = deniveleBar(tronc.z);
+  const PR = Jtronc + Ztronc + (detail[worst] ? detail[worst].pDivision : 0);
+  return { detail, worst, Qtot, Jtronc, Ztronc, PR };
+}
+// Relais — méthode COD1 (cas 1 relais / 2 engins, conforme au manuel).
+function calculRelais(s){
+  const PN=num(s.PN), PD=num(s.PD), AB=num(s.AB), BC=num(s.BC), Jab=num(s.Jab), Jbc=num(s.Jbc), Plance=num(s.Plance);
+  if(!(PN>0) || !(PD>0) || !(Jab>0) || !(Jbc>0) || !(AB>0)) return {invalid:true};
+  const NE = Math.max(1, Math.ceil(PN / PD));     // nb d'engins
+  const PM = PN / NE;                             // pression moyenne / engin
+  const D1raw = (PM / Jab) * 100;                 // distance théorique du 1er engin
+  let D1 = Math.round(D1raw / 40) * 40;           // arrondie à la longueur réelle (tuyaux de 40 m)
+  if(D1 > AB) D1 = AB;                            // le relais reste sur le tronçon d'alimentation
+  if(D1 < 0) D1 = 0;
+  const nbTuyaux = Math.round(D1 / 40);
+  const D2 = Math.max(0, (AB + BC) - D1);
+  const PE1 = (D1 / 100) * Jab;                                       // engin au point d'eau
+  const PE2 = (((AB - D1) / 100) * Jab) + ((BC / 100) * Jbc) + Plance; // engin relais
+  return { invalid:false, multi: NE>2, NE, PM, D1raw, D1, nbTuyaux, D2, PE1, PE2, somme: PE1+PE2, PN };
+}
+
+/* ============================================================
+   OUTILS
+   ============================================================ */
+// Parseur tolérant : accepte la virgule décimale FR, renvoie 0 si invalide.
+function num(s){ const v = parseFloat(String(s).replace(',', '.')); return isNaN(v) ? 0 : v; }
+function r1(x){ return Math.round(x*10)/10; }
+function r2(x){ return Math.round(x*100)/100; }
+function fb(x){ return r1(x).toLocaleString('fr-FR',{minimumFractionDigits:1,maximumFractionDigits:1}); }
+function consigne(x){ return (Math.ceil(x*2)/2).toLocaleString('fr-FR',{minimumFractionDigits:1,maximumFractionDigits:1}); }
+function sgn(x){ return x>=0 ? '+' : ''; }
+function fmtInput(v){ return String(v).replace('.', ','); }
+function fz(m){ m=Number(m); if(m===0) return 'plat'; return (m>0? '+'+m+' m (montée)' : m+' m (descente)'); }
+
+function el(html){ const t=document.createElement('template'); t.innerHTML=html.trim(); return t.content.firstElementChild; }
+
+/* ============================================================
+   COMPOSANTS UI
+   ============================================================ */
+// Stepper : type=text + inputmode=decimal (accepte la virgule). Renvoie {el, setValue}.
+function stepper(opts){
+  const f = el(`<div class="field"></div>`);
+  if(opts.label) f.appendChild(el(`<label>${opts.label}${opts.hint?` <span class="hint">${opts.hint}</span>`:''}</label>`));
+  const s = el(`<div class="stepper"></div>`);
+  const minus = el(`<button type="button" aria-label="Diminuer ${opts.label||'la valeur'}">−</button>`);
+  const valBox = el(`<div class="val"></div>`);
+  const input = el(`<input type="text" inputmode="decimal" enterkeyhint="done" autocomplete="off">`);
+  input.setAttribute('aria-label', `${opts.label||'Valeur'}${opts.unit?(' en '+opts.unit):''}`);
+  input.value = fmtInput(opts.value);
+  const unit = el(`<span>${opts.unit||''}</span>`);
+  valBox.appendChild(input); valBox.appendChild(unit);
+  const plus = el(`<button type="button" aria-label="Augmenter ${opts.label||'la valeur'}">+</button>`);
+  const clamp = v => (opts.min!==undefined && v<opts.min) ? opts.min : v;
+  const commit = v => { v = clamp(r2(v)); input.value = fmtInput(v); opts.onChange(v); };
+  minus.onclick = ()=> commit(num(input.value) - opts.step);
+  plus.onclick  = ()=> commit(num(input.value) + opts.step);
+  input.oninput = ()=> opts.onChange(clamp(num(input.value)));  // direct, sans reformat : curseur préservé
+  input.onblur  = ()=> commit(num(input.value));
+  s.appendChild(minus); s.appendChild(valBox); s.appendChild(plus);
+  f.appendChild(s);
+  if(opts.presets && opts.presets.length){
+    const c=el('<div class="chips" style="margin-top:8px"></div>');
+    opts.presets.forEach(p=>{
+      const b=el(`<button type="button" class="chip" style="flex:1 1 60px" aria-label="${opts.label||'Régler'} : ${p}${opts.unit?(' '+opts.unit):''}">${p}</button>`);
+      b.onclick=()=> commit(p);
+      c.appendChild(b);
+    });
+    f.appendChild(c);
+  }
+  return { el:f, setValue:(v)=>{ input.value = fmtInput(clamp(r2(v))); } };
+}
+
+// Sélecteur de diamètre. get()/set(k) sur l'état, recompute() pour repeindre le résultat.
+function hoseSelector(get, set, recompute){
+  const wrap = el('<div class="chips" role="group" aria-label="Diamètre du tuyau"></div>');
+  const chipEls=[];
+  HOSE_ORDER.forEach(k=>{
+    const h=HOSES[k];
+    const b=el(`<button type="button" class="chip">${h.label}${h.sub?`<small>${h.sub}</small>`:'<small>&nbsp;</small>'}</button>`);
+    b.onclick=()=>{ set(k); refresh(); recompute(); };
+    chipEls.push([b,k]); wrap.appendChild(b);
+  });
+  function refresh(){ const c=get(); chipEls.forEach(([b,k])=>{ const on=k===c; b.classList.toggle('on',on); b.setAttribute('aria-pressed', on); }); }
+  refresh();
+  return wrap;
+}
+
+// Sélecteur de dénivelé (mètres signés). Chips + stepper synchronisés, sans re-render global.
+function deniveleField(get, set, recompute){
+  const f = el(`<div class="field"><label>Dénivelé <span class="hint">+ montée / − descente · 1 bar par 10 m</span></label></div>`);
+  const grp = el(`<div class="chips" role="group" aria-label="Dénivelé : positif en montée, négatif en descente"></div>`);
+  const chipEls=[];
+  const st = stepper({ value:get(), step:5, unit:'m', onChange:(v)=>{ set(v); refresh(); recompute(); } });
+  [-20,-10,0,10,20].forEach(p=>{
+    const b=el(`<button type="button" class="chip" style="flex:1 1 60px">${p>0?'+'+p:p} m</button>`);
+    b.onclick=()=>{ set(p); st.setValue(p); refresh(); recompute(); };
+    chipEls.push([b,p]); grp.appendChild(b);
+  });
+  function refresh(){ const z=get(); chipEls.forEach(([b,p])=>{ const on=Number(z)===p; b.classList.toggle('on',on); b.setAttribute('aria-pressed', on); }); }
+  f.appendChild(grp); f.appendChild(st.el); refresh();
+  return f;
+}
+
+// Éditeur de ligne (tronçons en série). structural() = re-render complet (ajout/retrait), recompute() = résultat seul.
+function lineEditor(container, troncons, structural, recompute){
+  container.innerHTML='';
+  troncons.forEach((t,i)=>{
+    const tc = el(`<div class="troncon"></div>`);
+    const head = el(`<div class="thead"><b>Tuyau ${i+1}</b></div>`);
+    if(troncons.length>1){
+      const del=el(`<button type="button" class="delbtn">✕ retirer</button>`);
+      del.onclick=()=>{ troncons.splice(i,1); structural(); };
+      head.appendChild(del);
+    }
+    tc.appendChild(head);
+    tc.appendChild(hoseSelector(()=>t.hose, (k)=>{ t.hose=k; }, recompute));
+    tc.appendChild(stepper({label:'Longueur', value:t.L, step:20, min:0, unit:'m', presets:L_PRESETS, onChange:(v)=>{ t.L=v; recompute(); }}).el);
+    container.appendChild(tc);
+  });
+  const add=el(`<button type="button" class="addbtn">＋ Ajouter un tuyau en série</button>`);
+  add.onclick=()=>{ const last=troncons[troncons.length-1]; troncons.push({hose:last?last.hose:'45', L:20}); structural(); };
+  container.appendChild(add);
+}
+
+// Affichage du résultat principal. alerts = [{type:'warn'|'info', text}]
+function paintResult(node, PR, details, alerts){
+  alerts = alerts || [];
+  const hasWarn = PR>PR_MAX || alerts.some(a=>a.type==='warn');
+  node.className = 'result' + (hasWarn?' warn-pr':'');
+  let html = `<div class="big">À régler au fourgon (refoulement)</div>
+    <div class="pr">${fb(PR)}<u>bar</u></div>
+    <div class="consigne">valeur pratique ≈ ${consigne(PR)} b</div>`;
+  if(details && details.length){
+    html += `<div class="detail">` + details.map(d=>`${d[0]} : ${d[1]}`).join('\n') + `</div>`;
+  }
+  alerts.forEach(a=> html += `<div class="${a.type==='warn'?'alerte':'infoline'}">${a.text}</div>`);
+  node.innerHTML = html;
+}
+
+/* ============================================================
+   ÉTAT
+   ============================================================ */
+const Q_PRESETS = [150,250,500,1000];
+const L_PRESETS = [20,40,60,80,100,200];
+
+const ST = {
+  // Établissement unique : tronc (avant division) + 1 ou plusieurs départs en parallèle.
+  // division=false -> ligne simple vers 1 lance (les tuyaux sont dans le tronc).
+  etab: {
+    division: false,
+    tronc: { troncons:[{hose:'45', L:40}], z:0 },
+    lances: [ { troncons:[], Q:500, Pl:6, z:0 } ]
+  },
+  relais: { PN:26.3, PD:15, AB:880, BC:60, Jab:2.2, Jbc:1.5, Plance:6 },
+  table:  { hose:'45', Q:500, L:20 },
+};
+const DEFAULTS = JSON.parse(JSON.stringify(ST));
+const stateKeyFor = (scr)=> (scr==='rapide'||scr==='dispositif') ? 'etab' : scr;
+try{ const saved = JSON.parse(localStorage.getItem('cod1-state-v2')||'null'); if(saved && typeof saved==='object') Object.assign(ST, saved); }catch(e){}
+function persist(){ try{ localStorage.setItem('cod1-state-v2', JSON.stringify(ST)); }catch(e){} }
+
+/* ============================================================
+   NAVIGATION (avec gestion du bouton retour système)
+   ============================================================ */
+const TITLES = { rapide:['🔥','Calcul rapide'], dispositif:['🔀','Dispositif'], relais:['🔗','Relais'], table:['📋','Table & repères'] };
+const homeEl=document.getElementById('home'), screenEl=document.getElementById('screen');
+const titleEl=document.getElementById('title'), backBtn=document.getElementById('btnBack');
+const resetBtn=document.getElementById('btnReset'), themeBtn=document.getElementById('btnTheme');
+let currentScreen=null;
+
+function showHome(){
+  currentScreen=null;
+  screenEl.classList.add('hide'); homeEl.classList.remove('hide');
+  backBtn.style.display='none'; resetBtn.style.display='none';
+  titleEl.innerHTML='🚒 COD1<small>Pression de refoulement</small>';
+  window.scrollTo(0,0);
+}
+function showScreen(name){
+  currentScreen=name;
+  homeEl.classList.add('hide'); screenEl.classList.remove('hide');
+  backBtn.style.display='flex'; resetBtn.style.display='flex';
+  titleEl.innerHTML=`${TITLES[name][0]} ${TITLES[name][1]}<small>COD1</small>`;
+  RENDER[name]();
+  window.scrollTo(0,0);
+}
+function go(name){ showScreen(name); history.pushState({screen:name},''); }
+document.querySelectorAll('[data-go]').forEach(b=> b.onclick=()=> go(b.dataset.go));
+backBtn.onclick=()=> history.back();
+window.addEventListener('popstate', (e)=>{
+  const sc = (e.state && e.state.screen) || 'home';
+  if(sc==='home') showHome(); else showScreen(sc);
+});
+history.replaceState({screen:'home'},'');
+resetBtn.onclick=()=>{
+  if(!currentScreen) return;
+  const k = stateKeyFor(currentScreen);
+  if(DEFAULTS[k]){ ST[k] = JSON.parse(JSON.stringify(DEFAULTS[k])); RENDER[currentScreen](); persist(); }
+};
+
+/* ============================================================
+   ÉCRANS
+   ============================================================ */
+const RENDER = {};
+
+/* ---- CONSTRUCTEUR D'ÉTABLISSEMENT (série + division/parallèle) ---- */
+// Les deux tuiles "Calcul rapide" et "Dispositif" ouvrent ce même écran (état partagé ST.etab).
+RENDER.rapide = function(){ renderEtab(); };
+RENDER.dispositif = function(){ if(!ST.etab.division) poserDivision(); else renderEtab(); };
+
+function poserDivision(){
+  const s = ST.etab;
+  s.division = true;
+  if(!s.lances[0].troncons || s.lances[0].troncons.length===0) s.lances[0].troncons = [{hose:'45', L:40}];
+  while(s.lances.length < 2){
+    const ref = s.lances[s.lances.length-1];
+    s.lances.push({ troncons:[{hose:'45', L:40}], Q:ref?ref.Q:500, Pl:ref?ref.Pl:6, z:0 });
+  }
+  renderEtab();
+}
+
+function renderEtab(){
+  const s = ST.etab;
+  screenEl.innerHTML='';
+
+  /* ---- MODE SIMPLE : 1 lance, tuyaux en série ---- */
+  if(!s.division){
+    const lance = s.lances[0];
+    const card = el(`<div class="card"><h2>Établissement <span class="tag">1 lance</span></h2><div class="note">Tuyaux en série du fourgon à la lance.</div></div>`);
+    const lines = el(`<div></div>`); card.appendChild(lines); screenEl.appendChild(card);
+
+    const card2 = el(`<div class="card"><h2>Débit & lance</h2></div>`);
+    card2.appendChild(stepper({label:'Débit à la lance', value:lance.Q, step:50, min:0, unit:'L/min', presets:Q_PRESETS, onChange:(v)=>{ lance.Q=v; recompute(); }}).el);
+    card2.appendChild(stepper({label:'Pression à la lance', value:lance.Pl, step:0.5, min:0, unit:'bar', presets:[3,6,7,8], onChange:(v)=>{ lance.Pl=v; recompute(); }}).el);
+    card2.appendChild(deniveleField(()=>lance.z, (v)=>{ lance.z=v; }, recompute));
+    screenEl.appendChild(card2);
+
+    const divBtn = el(`<button type="button" class="addbtn" style="border-style:solid;border-color:var(--rouge);color:var(--rouge);font-size:15px">⑂ Poser une division (départs en parallèle)</button>`);
+    divBtn.onclick = poserDivision;
+    screenEl.appendChild(divBtn);
+
+    const res = el(`<div class="result"></div>`); screenEl.appendChild(res);
+    lineEditor(lines, s.tronc.troncons, renderEtab, recompute);
+
+    function recompute(){
+      const d = calculDispositif(s.tronc, s.lances);   // 1 départ : Qtot = Q, tronc porte ce débit
+      const Jtot = d.Jtronc + (d.detail[0] ? d.detail[0].J : 0);
+      const alerts=[];
+      if(!(d.Qtot>0)) alerts.push({type:'warn', text:'⚠️ Débit nul : les pertes de charge ne sont pas comptées — vérifie le débit.'});
+      if(d.PR>PR_MAX) alerts.push({type:'warn', text:`⚠️ Pression élevée (> ${PR_MAX} b) : envisager un relais ou réduire le débit.`});
+      if(d.PR<=0) alerts.push({type:'warn', text:'⚠️ Pression calculée ≤ 0 : vérifie le dénivelé et les données.'});
+      paintResult(res, d.PR, [
+        ['Pertes de charge', '+'+fb(Jtot)+' b'],
+        ['Pression à la lance', '+'+fb(lance.Pl)+' b'],
+        ['Dénivelé ('+fz(lance.z)+')', sgn(deniveleBar(lance.z))+fb(deniveleBar(lance.z))+' b'],
+      ], alerts);
+      persist();
+    }
+    recompute();
+    return;
+  }
+
+  /* ---- MODE DIVISION : tronc commun + départs en parallèle ---- */
+  const cardT = el(`<div class="card"><h2>Tronc commun <span class="tag">fourgon → division</span></h2><div class="note">Tuyaux avant la division (parcourus par la somme des débits).</div></div>`);
+  const troncBox = el('<div></div>'); cardT.appendChild(troncBox);
+  cardT.appendChild(deniveleField(()=>s.tronc.z, (v)=>{ s.tronc.z=v; }, recompute));
+  screenEl.appendChild(cardT);
+  lineEditor(troncBox, s.tronc.troncons, renderEtab, recompute);
+
+  const lanceCards=[];
+  s.lances.forEach((l,idx)=>{
+    const lc = el(`<div class="card lance-card"><h2>Départ ${idx+1} <span class="badge worstbadge" style="display:none">déterminant</span></h2></div>`);
+    const del=el(`<button type="button" class="delbtn" style="margin-left:auto">✕ retirer</button>`);
+    del.onclick=()=>{ removeDepart(idx); };
+    lc.querySelector('h2').appendChild(del);
+    const box=el('<div></div>'); lc.appendChild(box);
+    lineEditor(box, l.troncons, renderEtab, recompute);   // tuyaux après la division (propres à ce départ)
+    lc.appendChild(stepper({label:'Débit', value:l.Q, step:50, min:0, unit:'L/min', presets:Q_PRESETS, onChange:(v)=>{ l.Q=v; recompute(); }}).el);
+    lc.appendChild(stepper({label:'Pression lance', value:l.Pl, step:0.5, min:0, unit:'bar', presets:[3,6,7,8], onChange:(v)=>{ l.Pl=v; recompute(); }}).el);
+    lc.appendChild(deniveleField(()=>l.z, (v)=>{ l.z=v; }, recompute));
+    screenEl.appendChild(lc);
+    lanceCards.push(lc);
+  });
+
+  const addL=el(`<button type="button" class="addbtn" style="margin:6px 0 4px">＋ Ajouter un départ en parallèle</button>`);
+  addL.onclick=()=>{ const ref=s.lances[s.lances.length-1]; s.lances.push({troncons:[{hose:'45',L:40}], Q:ref?ref.Q:500, Pl:ref?ref.Pl:6, z:0}); renderEtab(); };
+  screenEl.appendChild(addL);
+
+  const res = el(`<div class="result"></div>`); screenEl.appendChild(res);
+
+  function recompute(){
+    const d = calculDispositif(s.tronc, s.lances);
+    lanceCards.forEach((lc,i)=>{ const on=i===d.worst; lc.classList.toggle('worst',on); const b=lc.querySelector('.worstbadge'); if(b) b.style.display=on?'inline-block':'none'; });
+    const details = d.detail.map((dl,i)=> ['Départ '+(i+1)+(i===d.worst?' (déterminant)':''), fb(dl.pDivision)+' b à la division']);
+    details.push(['Tronc commun ('+d.Qtot+' L/min)', '+'+fb(d.Jtronc)+' b'+(d.Ztronc?(' ; dénivelé '+sgn(d.Ztronc)+fb(d.Ztronc)+' b'):'')]);
+    const alerts=[];
+    if(!(d.Qtot>0)) alerts.push({type:'warn', text:'⚠️ Débit total nul : vérifie les débits des départs.'});
+    if(d.PR>PR_MAX) alerts.push({type:'warn', text:`⚠️ Pression élevée (> ${PR_MAX} b) : envisager un relais.`});
+    alerts.push({type:'info', text:'Départ déterminant : n°'+(d.worst+1)+' (perte la plus forte).'});
+    paintResult(res, d.PR, details, alerts);
+    persist();
+  }
+  recompute();
+}
+
+// Retirer un départ ; en repassant à 1 départ on revient en mode simple (les tuyaux du départ
+// restant sont fusionnés dans le tronc, en série vers la lance).
+function removeDepart(idx){
+  const s = ST.etab;
+  s.lances.splice(idx,1);
+  if(s.lances.length < 2){
+    s.division = false;
+    const rem = s.lances[0];
+    s.tronc.troncons = (s.tronc.troncons||[]).concat(rem.troncons||[]);
+    if(s.tronc.troncons.length===0) s.tronc.troncons = [{hose:'45', L:40}];
+    rem.troncons = [];
+    s.tronc.z = 0;   // le dénivelé simple est porté par la lance
+  }
+  renderEtab();
+}
+
+/* ---- RELAIS ---- */
+RENDER.relais = function(){
+  const s = ST.relais;
+  screenEl.innerHTML='';
+  const card = el(`<div class="card"><h2>Données du relais</h2>
+    <div class="note">Méthode COD1 en 6 étapes (1 relais = 2 engins). PN = pression nécessaire sur tout l'établissement (calcul mode Dispositif). PD = pression disponible par engin (≈ 15 b). Règle de sécurité : une pompe ne doit pas <b>recevoir</b> plus de 4 à 5 b (jamais &gt; 8 b).</div></div>`);
+  const mk=(label,key,step,unit,hint)=> card.appendChild(stepper({label,value:s[key],step,unit,hint,min:0,onChange:v=>{ s[key]=v; recompute(); }}).el);
+  mk('Pression nécessaire (PN)','PN',0.5,'bar','sur tout l’établissement');
+  mk('Pression disponible / engin (PD)','PD',0.5,'bar','');
+  mk('Longueur tronçon d’alimentation AB','AB',20,'m','');
+  mk('Perte AB (J)','Jab',0.05,'b/hm','tuyau d’alimentation');
+  mk('Longueur division→lances BC','BC',20,'m','');
+  mk('Perte BC (J)','Jbc',0.05,'b/hm','');
+  mk('Pression à la lance','Plance',0.5,'bar','');
+  screenEl.appendChild(card);
+
+  const out = el(`<div class="card"><h2>Résultat — 6 étapes</h2><ol class="steps" id="relSteps"></ol></div>`);
+  screenEl.appendChild(out);
+  const res = el(`<div class="result"></div>`); screenEl.appendChild(res);
+  const stepsEl = out.querySelector('#relSteps');
+
+  function recompute(){
+    const r = calculRelais(s);
+    if(r.invalid){
+      stepsEl.innerHTML = `<li><b>Données incomplètes</b>Renseigne des valeurs strictement positives pour PN, PD, longueur AB et les pertes J.</li>`;
+      res.className='result warn-pr';
+      res.innerHTML=`<div class="big">Relais</div><div class="alerte" style="margin-top:6px">⚠️ Renseigne des valeurs &gt; 0 (PN, PD, AB, J).</div>`;
+      persist(); return;
+    }
+    stepsEl.innerHTML = `
+      <li><b>Pression nécessaire (PN)</b><span class="v">${fb(r.PN)} bar</span></li>
+      <li><b>Nombre d’engins (NE = PN / PD, arrondi sup.)</b><span class="v">${r.NE} engin(s)</span></li>
+      <li><b>Pression moyenne / engin (PM = PN / NE)</b><span class="v">${fb(r.PM)} bar</span></li>
+      ${ r.multi
+        ? `<li><b>Emplacements & pressions</b><span style="color:var(--rouge);font-weight:800">Méthode détaillée limitée à 1 relais.</span> Pour ${r.NE} engins, répartir par bonds successifs (≈ ${fb(r.PM)} b/engin) ou voir le chef d’agrès.</li>`
+        : `<li><b>Emplacements</b>1er engin refoule sur <span class="v">${r.D1} m</span> (${r.nbTuyaux} tuyaux de 40 m) · 2e engin → lances : <span class="v">${r.D2} m</span></li>
+           <li><b>Pression aux engins</b>Engin 1 (point d’eau) : <span class="v">${fb(r.PE1)} bar</span> · Engin 2 (relais) : <span class="v">${fb(r.PE2)} bar</span></li>
+           <li><b>Vérification (PE1 + PE2 ≈ PN)</b><span class="v">${fb(r.somme)} ≈ ${fb(r.PN)} bar</span></li>` }`;
+    paintRelais(res, r);
+    persist();
+  }
+  recompute();
+};
+
+function paintRelais(node, r){
+  if(r.multi){
+    node.className='result warn-pr';
+    node.innerHTML=`<div class="big">Relais — ${r.NE} engins nécessaires</div>
+      <div class="pr">${r.NE}<u>engins</u></div>
+      <div class="consigne">pression moyenne / engin ≈ ${consigne(r.PM)} b</div>
+      <div class="alerte">⚠️ Méthode détaillée limitée à 1 relais (2 engins). Répartir par bonds successifs ou voir le chef d’agrès.</div>`;
+    return;
+  }
+  const haut = Math.max(r.PE1, r.PE2) > PR_MAX;
+  node.className='result'+(haut?' warn-pr':'');
+  node.innerHTML=`<div class="big">Pressions de refoulement</div>
+    <div class="two">
+      <div><span>Engin point d’eau</span><b>${fb(r.PE1)}<u>b</u></b></div>
+      <div><span>Engin relais</span><b>${fb(r.PE2)}<u>b</u></b></div>
+    </div>
+    <div class="detail">${r.NE} engin(s) · 1er refoule sur ${r.D1} m (${r.nbTuyaux} tuyaux de 40 m) · puis ${r.D2} m jusqu’aux lances
+Vérif : ${fb(r.PE1)} + ${fb(r.PE2)} = ${fb(r.somme)} ≈ PN ${fb(r.PN)} b</div>
+    ${haut?`<div class="alerte">⚠️ Pression d’un engin &gt; ${PR_MAX} b : revoir le découpage / ajouter un engin.</div>`:''}`;
+}
+
+/* ---- TABLE & REPÈRES ---- */
+RENDER.table = function(){
+  const s = ST.table;
+  screenEl.innerHTML='';
+  let rows='';
+  HOSE_ORDER.forEach(k=>{ const h=HOSES[k];
+    rows+=`<tr><td>${h.label}${h.sub?' <small style="color:var(--texte-doux)">'+h.sub+'</small>':''}</td><td>${h.Qn}</td><td>${r1(h.Qn*0.06).toLocaleString('fr-FR',{minimumFractionDigits:1,maximumFractionDigits:1})}</td><td>${h.Jn.toLocaleString('fr-FR')}</td></tr>`;
+  });
+  const tcard = el(`<div class="card"><h2>Table des pertes de charge nominales</h2>
+    <table class="ref"><thead><tr><th>⌀ tuyau</th><th>Qn (L/min)</th><th>Qn (m³/h)</th><th>J (b/hm)</th></tr></thead><tbody>${rows}</tbody></table>
+    <div class="note">b/hm = bar par hectomètre (100 m). ⌀150 non normalisé.</div></div>`);
+  screenEl.appendChild(tcard);
+
+  const calc = el(`<div class="card"><h2>Perte de charge d’un tronçon</h2></div>`);
+  const dlab = el('<div class="field"><label>Diamètre</label></div>'); calc.appendChild(dlab);
+  dlab.appendChild(hoseSelector(()=>s.hose, (k)=>{ s.hose=k; }, recompute));
+  calc.appendChild(stepper({label:'Débit', value:s.Q, step:50, min:0, unit:'L/min', presets:Q_PRESETS, onChange:(v)=>{ s.Q=v; recompute(); }}).el);
+  calc.appendChild(stepper({label:'Longueur', value:s.L, step:20, min:0, unit:'m', presets:L_PRESETS, onChange:(v)=>{ s.L=v; recompute(); }}).el);
+  screenEl.appendChild(calc);
+
+  const res = el(`<div class="result"></div>`); screenEl.appendChild(res);
+  function recompute(){
+    const J = perteTroncon(s.hose, s.Q, s.L);
+    res.className='result';
+    res.innerHTML=`<div class="big">Perte de charge du tronçon</div>
+      <div class="pr">${fb(J)}<u>bar</u></div>
+      <div class="detail">${HOSES[s.hose].label} · ${s.Q} L/min · ${s.L} m
+J = ${HOSES[s.hose].Jn} × (${s.Q}/${HOSES[s.hose].Qn})² × ${s.L}/100</div>`;
+    persist();
+  }
+  recompute();
+};
+
+/* ============================================================
+   Masquer le résultat sticky pendant la saisie clavier (petit écran)
+   ============================================================ */
+const isCoarse = ()=>{ try{ return window.matchMedia('(pointer: coarse)').matches; }catch(e){ return false; } };
+document.addEventListener('focusin', (e)=>{ if(e.target && e.target.tagName==='INPUT' && isCoarse()) document.body.classList.add('kb-open'); });
+document.addEventListener('focusout', (e)=>{ if(e.target && e.target.tagName==='INPUT') setTimeout(()=>document.body.classList.remove('kb-open'),150); });
+
+/* ============================================================
+   Thème jour/nuit (mémorisé)
+   ============================================================ */
+function applyTheme(t){
+  const nuit = t==='nuit';
+  document.documentElement.dataset.theme = nuit?'nuit':'';
+  themeBtn.textContent = nuit?'☀️':'🌙';
+  themeBtn.setAttribute('aria-label', nuit?'Passer en mode jour':'Passer en mode nuit');
+  themeBtn.setAttribute('aria-pressed', nuit);
+  const tc = document.querySelector('meta[name=theme-color]'); if(tc) tc.setAttribute('content', nuit?'#0d1014':'#b30000');
+}
+try{ applyTheme(localStorage.getItem('cod1-theme')||''); }catch(e){}
+themeBtn.onclick=()=>{ const n = document.documentElement.dataset.theme==='nuit'?'':'nuit'; applyTheme(n); try{localStorage.setItem('cod1-theme',n);}catch(e){} };
+
+/* ============================================================
+   SERVICE WORKER (hors-ligne) — seulement si servi en http(s)
+   ============================================================ */
+if('serviceWorker' in navigator && (location.protocol==='https:' || location.hostname==='localhost')){
+  window.addEventListener('load', ()=> navigator.serviceWorker.register('sw.js').catch(()=>{}));
+}
+</script>
+</body>
+</html>

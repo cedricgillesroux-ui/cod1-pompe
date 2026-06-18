@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="COD1 pompe">
+  <!-- Fond plein (déborde la safe-zone) -->
+  <rect width="512" height="512" fill="#c1121f"/>
+  <!-- Tout le contenu confiné dans la zone sûre centrale (~60%) -->
+  <g transform="translate(256,250)">
+    <circle cx="0" cy="0" r="120" fill="#fff"/>
+    <circle cx="0" cy="0" r="120" fill="none" stroke="#9d0208" stroke-width="11"/>
+    <g stroke="#15181c" stroke-width="8" stroke-linecap="round">
+      <line x1="0" y1="-106" x2="0" y2="-86"/>
+      <line x1="106" y1="0" x2="86" y2="0"/>
+      <line x1="-106" y1="0" x2="-86" y2="0"/>
+      <line x1="75" y1="-75" x2="61" y2="-61"/>
+      <line x1="-75" y1="-75" x2="-61" y2="-61"/>
+    </g>
+    <line x1="0" y1="0" x2="66" y2="-53" stroke="#c1121f" stroke-width="13" stroke-linecap="round"/>
+    <circle cx="0" cy="0" r="16" fill="#15181c"/>
+    <text x="0" y="60" font-family="Arial, sans-serif" font-size="34" font-weight="bold" fill="#15181c" text-anchor="middle">bar</text>
+  </g>
+</svg>
