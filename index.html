@@ -239,12 +239,15 @@
 const HOSES = {
   '22sr': {label:'⌀22', sub:'semi-rigide', Qn:58,  Jn:2.2 },
   '22':   {label:'⌀22', sub:'P.I.L',       Qn:58,  Jn:1.7 },
+  // ⌀35 : valeurs issues du tableau de pertes de charge 2025 (source fiable).
+  //   Vérif : J = Jn·(Q/Qn)²·L/100  →  @250 L/min / 20 m = 4,0·1·0,2 = 0,8 b ✓ ;  @500 = 3,2 b ✓ ;  @600 ≈ 4,6 b (table : 4,8 b arrondi).
+  '35':   {label:'⌀35', sub:'',            Qn:250, Jn:4.0 },
   '45':   {label:'⌀45', sub:'',            Qn:250, Jn:1.5 },
   '70':   {label:'⌀70', sub:'',            Qn:500, Jn:0.55},
   '110':  {label:'⌀110',sub:'',            Qn:1000,Jn:0.28},
   '150':  {label:'⌀150',sub:'non norm.',   Qn:2000,Jn:0.13},
 };
-const HOSE_ORDER = ['22sr','22','45','70','110','150'];
+const HOSE_ORDER = ['22sr','22','35','45','70','110','150'];
 const PR_MAX = 15; // au-delà : suggérer un relais
 
 function perteTroncon(hoseKey, Q, L){
@@ -374,6 +377,13 @@ function deniveleField(get, set, recompute){
   return f;
 }
 
+// Dénivelé global : une seule carte pour tout l'établissement (seul le dénivelé total compte dans le calcul).
+function deniveleCard(get, set, recompute){
+  const c = el(`<div class="card"><h2>Dénivelé global</h2><div class="note">Hauteur de la lance la plus haute par rapport à la pompe — compté une seule fois pour tout l'établissement.</div></div>`);
+  c.appendChild(deniveleField(get, set, recompute));
+  return c;
+}
+
 // Éditeur de ligne (tronçons en série). structural() = re-render complet (ajout/retrait), recompute() = résultat seul.
 function lineEditor(container, troncons, structural, recompute){
   container.innerHTML='';
@@ -416,13 +426,23 @@ function paintResult(node, PR, details, alerts){
 const Q_PRESETS = [150,250,500,1000];
 const L_PRESETS = [20,40,60,80,100,200];
 
+// Règles métier de la division (demandées par l'utilisateur, conformes à la doctrine) :
+const BIG_FEED = ['70','110','150'];                                    // un tuyau ≥ ⌀70 peut alimenter une division
+function defaultBranchHoses(){ return [{hose:'45', L:20},{hose:'35', L:20}]; } // après division : ⌀45 puis ⌀35 jusqu'à la lance (modifiable)
+function ensure70Upstream(troncons){                                    // en amont d'une division il faut un tuyau ≥ ⌀70
+  if(!troncons.length){ troncons.push({hose:'70', L:40}); return; }     // aucun tuyau → on en ajoute un de 70
+  const last = troncons[troncons.length-1];
+  if(!BIG_FEED.includes(last.hose)) last.hose = '70';                   // tuyau trop petit (22/35/45) → on le passe en 70 ; déjà ≥70 → inchangé
+}
+
 const ST = {
   // Établissement unique : tronc (avant division) + 1 ou plusieurs départs en parallèle.
   // division=false -> ligne simple vers 1 lance (les tuyaux sont dans le tronc).
   etab: {
     division: false,
-    tronc: { troncons:[{hose:'45', L:40}], z:0 },
-    lances: [ { troncons:[], Q:500, Pl:6, z:0 } ]
+    z: 0,                                       // dénivelé global (compté une seule fois pour tout l'établissement)
+    tronc: { troncons:[{hose:'45', L:40}] },    // ligne simple : 45 ; quand on pose une division le tronc passe en ≥70 (ensure70Upstream)
+    lances: [ { troncons:[], Q:500, Pl:6 } ]
   },
   relais: { PN:26.3, PD:15, AB:880, BC:60, Jab:2.2, Jbc:1.5, Plance:6 },
   table:  { hose:'45', Q:500, L:20 },
@@ -437,8 +457,8 @@ const ST = {
 };
 const DEFAULTS = JSON.parse(JSON.stringify(ST));
 const stateKeyFor = (scr)=> (scr==='rapide'||scr==='dispositif') ? 'etab' : scr;
-try{ const saved = JSON.parse(localStorage.getItem('cod1-state-v2')||'null'); if(saved && typeof saved==='object') Object.assign(ST, saved); }catch(e){}
-function persist(){ try{ localStorage.setItem('cod1-state-v2', JSON.stringify(ST)); }catch(e){} }
+try{ const saved = JSON.parse(localStorage.getItem('cod1-state-v3')||'null'); if(saved && typeof saved==='object') Object.assign(ST, saved); }catch(e){}
+function persist(){ try{ localStorage.setItem('cod1-state-v3', JSON.stringify(ST)); }catch(e){} }
 
 /* ============================================================
    NAVIGATION (avec gestion du bouton retour système)
@@ -491,10 +511,11 @@ RENDER.dispositif = function(){ if(!ST.etab.division) poserDivision(); else rend
 function poserDivision(){
   const s = ST.etab;
   s.division = true;
-  if(!s.lances[0].troncons || s.lances[0].troncons.length===0) s.lances[0].troncons = [{hose:'45', L:40}];
+  ensure70Upstream(s.tronc.troncons);                                   // ⌀70 en amont de la division
+  if(!s.lances[0].troncons || s.lances[0].troncons.length===0) s.lances[0].troncons = defaultBranchHoses();
   while(s.lances.length < 2){
     const ref = s.lances[s.lances.length-1];
-    s.lances.push({ troncons:[{hose:'45', L:40}], Q:ref?ref.Q:500, Pl:ref?ref.Pl:6, z:0 });
+    s.lances.push({ troncons:defaultBranchHoses(), Q:ref?ref.Q:500, Pl:ref?ref.Pl:6 });
   }
   renderEtab();
 }
@@ -512,18 +533,21 @@ function renderEtab(){
     const card2 = el(`<div class="card"><h2>Débit & lance</h2></div>`);
     card2.appendChild(stepper({label:'Débit à la lance', value:lance.Q, step:50, min:0, unit:'L/min', presets:Q_PRESETS, onChange:(v)=>{ lance.Q=v; recompute(); }}).el);
     card2.appendChild(stepper({label:'Pression à la lance', value:lance.Pl, step:0.5, min:0, unit:'bar', presets:[3,6,7,8], onChange:(v)=>{ lance.Pl=v; recompute(); }}).el);
-    card2.appendChild(deniveleField(()=>lance.z, (v)=>{ lance.z=v; }, recompute));
     screenEl.appendChild(card2);
 
     const divBtn = el(`<button type="button" class="addbtn" style="border-style:solid;border-color:var(--rouge);color:var(--rouge);font-size:15px">⑂ Poser une division (départs en parallèle)</button>`);
     divBtn.onclick = poserDivision;
     screenEl.appendChild(divBtn);
 
+    screenEl.appendChild(deniveleCard(()=>s.z, (v)=>{ s.z=v; }, recompute));
+
     const res = el(`<div class="result"></div>`); screenEl.appendChild(res);
     lineEditor(lines, s.tronc.troncons, renderEtab, recompute);
 
     function recompute(){
-      const d = calculDispositif(s.tronc, s.lances);   // 1 départ : Qtot = Q, tronc porte ce débit
+      const tronc = { troncons:s.tronc.troncons, z:s.z };                 // dénivelé global porté par le tronc → compté une seule fois
+      const lances = s.lances.map(l=>({ troncons:l.troncons||[], Q:l.Q, Pl:l.Pl, z:0 }));
+      const d = calculDispositif(tronc, lances);   // 1 départ : Qtot = Q, tronc porte ce débit
       const Jtot = d.Jtronc + (d.detail[0] ? d.detail[0].J : 0);
       const alerts=[];
       if(!(d.Qtot>0)) alerts.push({type:'warn', text:'⚠️ Débit nul : les pertes de charge ne sont pas comptées — vérifie le débit.'});
@@ -532,7 +556,7 @@ function renderEtab(){
       paintResult(res, d.PR, [
         ['Pertes de charge', '+'+fb(Jtot)+' b'],
         ['Pression à la lance', '+'+fb(lance.Pl)+' b'],
-        ['Dénivelé ('+fz(lance.z)+')', sgn(deniveleBar(lance.z))+fb(deniveleBar(lance.z))+' b'],
+        ['Dénivelé ('+fz(s.z)+')', sgn(d.Ztronc)+fb(d.Ztronc)+' b'],
       ], alerts);
       persist();
     }
@@ -541,9 +565,8 @@ function renderEtab(){
   }
 
   /* ---- MODE DIVISION : tronc commun + départs en parallèle ---- */
-  const cardT = el(`<div class="card"><h2>Tronc commun <span class="tag">fourgon → division</span></h2><div class="note">Tuyaux avant la division (parcourus par la somme des débits).</div></div>`);
+  const cardT = el(`<div class="card"><h2>Tronc commun <span class="tag">fourgon → division</span></h2><div class="note">Tuyaux avant la division (parcourus par la somme des débits) — un ⌀70 au minimum en amont.</div></div>`);
   const troncBox = el('<div></div>'); cardT.appendChild(troncBox);
-  cardT.appendChild(deniveleField(()=>s.tronc.z, (v)=>{ s.tronc.z=v; }, recompute));
   screenEl.appendChild(cardT);
   lineEditor(troncBox, s.tronc.troncons, renderEtab, recompute);
 
@@ -557,22 +580,26 @@ function renderEtab(){
     lineEditor(box, l.troncons, renderEtab, recompute);   // tuyaux après la division (propres à ce départ)
     lc.appendChild(stepper({label:'Débit', value:l.Q, step:50, min:0, unit:'L/min', presets:Q_PRESETS, onChange:(v)=>{ l.Q=v; recompute(); }}).el);
     lc.appendChild(stepper({label:'Pression lance', value:l.Pl, step:0.5, min:0, unit:'bar', presets:[3,6,7,8], onChange:(v)=>{ l.Pl=v; recompute(); }}).el);
-    lc.appendChild(deniveleField(()=>l.z, (v)=>{ l.z=v; }, recompute));
     screenEl.appendChild(lc);
     lanceCards.push(lc);
   });
 
   const addL=el(`<button type="button" class="addbtn" style="margin:6px 0 4px">＋ Ajouter un départ en parallèle</button>`);
-  addL.onclick=()=>{ const ref=s.lances[s.lances.length-1]; s.lances.push({troncons:[{hose:'45',L:40}], Q:ref?ref.Q:500, Pl:ref?ref.Pl:6, z:0}); renderEtab(); };
+  addL.onclick=()=>{ const ref=s.lances[s.lances.length-1]; s.lances.push({troncons:defaultBranchHoses(), Q:ref?ref.Q:500, Pl:ref?ref.Pl:6}); renderEtab(); };
   screenEl.appendChild(addL);
+
+  screenEl.appendChild(deniveleCard(()=>s.z, (v)=>{ s.z=v; }, recompute));
 
   const res = el(`<div class="result"></div>`); screenEl.appendChild(res);
 
   function recompute(){
-    const d = calculDispositif(s.tronc, s.lances);
+    const tronc = { troncons:s.tronc.troncons, z:s.z };                   // dénivelé global appliqué une seule fois, via le tronc
+    const lances = s.lances.map(l=>({ troncons:l.troncons||[], Q:l.Q, Pl:l.Pl, z:0 }));
+    const d = calculDispositif(tronc, lances);
     lanceCards.forEach((lc,i)=>{ const on=i===d.worst; lc.classList.toggle('worst',on); const b=lc.querySelector('.worstbadge'); if(b) b.style.display=on?'inline-block':'none'; });
     const details = d.detail.map((dl,i)=> ['Départ '+(i+1)+(i===d.worst?' (déterminant)':''), fb(dl.pDivision)+' b à la division']);
-    details.push(['Tronc commun ('+d.Qtot+' L/min)', '+'+fb(d.Jtronc)+' b'+(d.Ztronc?(' ; dénivelé '+sgn(d.Ztronc)+fb(d.Ztronc)+' b'):'')]);
+    details.push(['Tronc commun ('+d.Qtot+' L/min)', '+'+fb(d.Jtronc)+' b']);
+    if(s.z!==0) details.push(['Dénivelé global ('+fz(s.z)+')', sgn(d.Ztronc)+fb(d.Ztronc)+' b']);
     const alerts=[];
     if(!(d.Qtot>0)) alerts.push({type:'warn', text:'⚠️ Débit total nul : vérifie les débits des départs.'});
     if(d.PR>PR_MAX) alerts.push({type:'warn', text:`⚠️ Pression élevée (> ${PR_MAX} b) : envisager un relais.`});
@@ -594,7 +621,6 @@ function removeDepart(idx){
     s.tronc.troncons = (s.tronc.troncons||[]).concat(rem.troncons||[]);
     if(s.tronc.troncons.length===0) s.tronc.troncons = [{hose:'45', L:40}];
     rem.troncons = [];
-    s.tronc.z = 0;   // le dénivelé simple est porté par la lance
   }
   renderEtab();
 }
@@ -703,8 +729,8 @@ J = ${HOSES[s.hose].Jn} × (${s.Q}/${HOSES[s.hose].Qn})² × ${s.L}/100</div>`;
                           branches:[{hoses:[{hose,L}], lance:{Q,Pl}|null}], z }
    Débit jamais saisi sur un tuyau : il vient des lances (tronc = somme).
    ============================================================ */
-const SCH_COLOR = {'22sr':'#e08a00','22':'#e08a00','45':'#1b9e4b','70':'#0b6bd6','110':'#7a3ff0','150':'#c1121f'};
-const SCH_W = {'22sr':6,'22':6,'45':8,'70':11,'110':14,'150':16};
+const SCH_COLOR = {'22sr':'#e08a00','22':'#e08a00','35':'#d6336c','45':'#1b9e4b','70':'#0b6bd6','110':'#7a3ff0','150':'#c1121f'};
+const SCH_W = {'22sr':6,'22':6,'35':7,'45':8,'70':11,'110':14,'150':16};
 const LANCE_Q_PRESETS = [250,500,600,1000];
 
 function trunkDebit(){
@@ -770,7 +796,7 @@ function renderSchema(){
     s.branches.forEach((b,bi)=> row.appendChild(renderBranch(b,bi)));
     if(s.branches.length < 3){   // sortie(s) libre(s) de la division = robinet fermé, ouvrable plus tard
       const ph = el(`<div class="sch-branch-ph"><button type="button" class="sch-closed" aria-label="Ouvrir un départ (robinet actuellement fermé)"><span class="ico" aria-hidden="true">🚱</span><span>robinet fermé</span><b>＋ ouvrir un départ</b></button></div>`);
-      ph.querySelector('.sch-closed').onclick = ()=>{ s.branches.push({hoses:[], lance:{Q:600, Pl:6}}); renderSchema(); };
+      ph.querySelector('.sch-closed').onclick = ()=>{ s.branches.push({hoses:defaultBranchHoses(), lance:{Q:600, Pl:6}}); renderSchema(); };
       row.appendChild(ph);
     }
     draw.appendChild(row);
@@ -873,7 +899,10 @@ function insertDivisionAt(index){
   const s = ST.schema;
   const after = s.trunk.slice(index);
   s.trunk = s.trunk.slice(0, index);
-  s.branches = [{ hoses: after, lance: s.lance || null }];
+  ensure70Upstream(s.trunk);                                             // ⌀70 en amont de la division
+  const lance = s.lance || null;
+  const hoses = after.length ? after : (lance ? defaultBranchHoses() : []); // branche avec lance sans tuyau → 45 puis 35
+  s.branches = [{ hoses, lance }];
   s.lance = null; s.hasDivision = true;
 }
 function pipeSheet(arr, i){
@@ -907,7 +936,7 @@ function lanceEditSheet(lanceObj, apply, opts){
 function lanceTerminalSheet(){
   const s = ST.schema;
   lanceEditSheet(s.lance, (v)=>{ s.lance=v; }, {
-    extra:[{ label:'⑂ Poser une division ici', fn:()=>{ s.branches=[{hoses:[],lance:s.lance}]; s.lance=null; s.hasDivision=true; } }],
+    extra:[{ label:'⑂ Poser une division ici', fn:()=>{ ensure70Upstream(s.trunk); s.branches=[{hoses:defaultBranchHoses(),lance:s.lance}]; s.lance=null; s.hasDivision=true; } }],
     onRemove:()=>{ s.lance=null; }
   });
 }
@@ -919,21 +948,21 @@ function branchEndSheet(bi){
   const b = ST.schema.branches[bi];
   const body = el(`<div><h3 class="sheet-h">Ajouter au départ ${bi+1}</h3></div>`);
   const t = el(`<button type="button" class="sheet-alt">🧯 Un tuyau</button>`); t.onclick=()=>{ closeSheet(); addTuyauSheet(b.hoses, b.hoses.length); };
-  const l = el(`<button type="button" class="sheet-alt">🔫 Une lance</button>`); l.onclick=()=>{ closeSheet(); lanceEditSheet(null,(v)=>{ b.lance=v; }); };
+  const l = el(`<button type="button" class="sheet-alt">🔫 Une lance</button>`); l.onclick=()=>{ closeSheet(); lanceEditSheet(null,(v)=>{ if(!b.hoses.length) b.hoses=defaultBranchHoses(); b.lance=v; }); };
   body.appendChild(t); body.appendChild(l); openSheet(body);
 }
 function trunkEndSheet(){
   const s = ST.schema;
   const body = el(`<div><h3 class="sheet-h">Ajouter</h3></div>`);
   const t = el(`<button type="button" class="sheet-alt">🧯 Un tuyau</button>`); t.onclick=()=>{ closeSheet(); addTuyauSheet(s.trunk, s.trunk.length); };
-  const d = el(`<button type="button" class="sheet-alt">⑂ Une division</button>`); d.onclick=()=>{ s.hasDivision=true; s.lance=null; s.branches=[{hoses:[],lance:{Q:600,Pl:6}}]; closeSheet(); renderSchema(); };
+  const d = el(`<button type="button" class="sheet-alt">⑂ Une division</button>`); d.onclick=()=>{ ensure70Upstream(s.trunk); s.hasDivision=true; s.lance=null; s.branches=[{hoses:defaultBranchHoses(),lance:{Q:600,Pl:6}}]; closeSheet(); renderSchema(); };
   const l = el(`<button type="button" class="sheet-alt">🔫 Une lance</button>`); l.onclick=()=>{ closeSheet(); lanceEditSheet(null,(v)=>{ s.lance=v; }); };
   body.appendChild(t); body.appendChild(d); body.appendChild(l); openSheet(body);
 }
 function divisionSheet(){
   const s = ST.schema;
   const body = el(`<div><h3 class="sheet-h">Division</h3></div>`);
-  if(s.branches.length < 3){ const a=el(`<button type="button" class="sheet-alt">＋ Ajouter un départ</button>`); a.onclick=()=>{ s.branches.push({hoses:[],lance:{Q:600,Pl:6}}); closeSheet(); renderSchema(); }; body.appendChild(a); }
+  if(s.branches.length < 3){ const a=el(`<button type="button" class="sheet-alt">＋ Ajouter un départ</button>`); a.onclick=()=>{ s.branches.push({hoses:defaultBranchHoses(),lance:{Q:600,Pl:6}}); closeSheet(); renderSchema(); }; body.appendChild(a); }
   const rm = el(`<button type="button" class="sheet-rm">Retirer la division</button>`);
   rm.onclick = ()=>{ collapseDivision(); closeSheet(); renderSchema(); };
   body.appendChild(rm); openSheet(body);
